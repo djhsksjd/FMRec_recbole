@@ -1,0 +1,7 @@
+log/
+
+saved/*
+
+log_tensorboard/
+
+model/__pycache__/

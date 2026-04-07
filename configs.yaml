@@ -1,0 +1,81 @@
+# RecBole 基础配置
+#
+# --- 切换数据集（例如 Yelp）---
+# 1) 从 RecBole 官方列表下载已处理好的 atomic 文件：
+#    https://recbole.io/dataset_list.html  → Google Drive / 百度网盘（RecSysDatasets）
+#    Yelp 常有多个版本：yelp2018 / yelp2020 / yelp2021 / yelp2022 / yelp-full 等，解压后目录名以包内为准。
+# 2) 目录结构必须是：
+#      <data_path>/<dataset>/<dataset>.inter
+#    例如（在 FMRec 目录下运行 train.py）：datasets/yelp2018/yelp2018.inter
+# 3) 修改下面两行：dataset 与文件夹名一致；data_path 为「包含该文件夹」的父目录（相对当前工作目录）。
+# 4) 若 .inter 首行字段名不是 user_id/item_id/timestamp，需改 load_col 与 *_FIELD。
+#
+# dataset: ml-100k
+# dataset: amazon_beauty
+dataset: steam
+# 在 FMRec 下执行 python train.py 时用 datasets/（不要用 ../datasets/，那会指到仓库根下的 datasets）
+data_path: datasets/
+
+seed: 1997
+reproducibility: True
+
+cuda: 0
+
+USER_ID_FIELD: user_id
+ITEM_ID_FIELD: item_id
+TIME_FIELD: timestamp
+load_col:
+    # inter: [user_id, item_id, timestamp] for ml-100k
+    inter: [user_id, item_id, rating, timestamp] # for amazon_beauty
+
+MAX_ITEM_LIST_LENGTH: 50
+ITEM_LIST_LENGTH_FIELD: item_length
+LIST_SUFFIX: _list
+POSITION_FIELD: position_id
+
+# --- Training schedule (aligned with src/main.py + src/trainer.py) ---
+epochs: 500
+eval_step: 20          # src: eval_interval — validate every N epochs (RecBole: (epoch+1) % eval_step == 0)
+# Note: RecBole early-stops on valid_metric only; src used any HR@k/NDCG@k improvement.
+stopping_step: 5      # src: patience — consecutive bad validations (no valid_metric gain)
+train_batch_size: 512
+eval_batch_size: 256
+learning_rate: 0.001
+learner: adam         # RecBole uses key `learner` (src used optimizer name similarly)
+weight_decay: 0.0
+# StepLR: one step() per epoch in FMRecTrainer (same as src lr_scheduler.step() each epoch)
+decay_step: 100
+gamma: 0.1
+
+eval_args:
+  split: {'LS': 'valid_and_test'}
+  group_by: user
+  order: TO
+  mode: full
+# HR@5/10/20 (custom metric `hr`, logs as hr@{k}) + NDCG@5/10/20 (built-in `NDCG`)
+metrics: ['hr', 'NDCG']
+topk: [5, 10, 20]
+valid_metric: NDCG@20
+
+# For full-sort evaluation with CE loss, disable negative sampling.
+train_neg_sample_args: ~
+
+# FMRec 超参（直接从你的 main.py 迁移）
+hidden_size: 128
+dropout: 0.1
+emb_dropout: 0.3
+num_blocks: 4
+lambda_uncertainty: 0.001
+eps: 0.001
+sample_N: 30
+eps_reverse: 0.001
+m_logNorm: 1.0
+s_logNorm: 0.6
+s_modsamp: 1.0
+sampling_method: mode
+mask_ratio: 1.0
+Loss_Alpha: 0.2
+Loss_Beta: 0.4
+last: 2
+
+hidden_act: gelu
