@@ -7,6 +7,8 @@ directly: Config -> Dataset -> DataLoader -> Trainer.
 """
 import os
 import torch
+import argparse
+import sys
 import numpy as np
 
 # RecBole versions that predate NumPy 2.0 may reference removed aliases.
@@ -34,11 +36,26 @@ from model.fmrec_trainer import FMRecTrainer
 register_hr_metric()
 
 
+
 def main() -> None:
-    # Preferred: pass the custom model *class* into RecBole's Config.
-    # `dataset` is still required by some RecBole versions; we set a default
-    # that matches `configs.yaml` and can be overridden there or via CLI.
+    # Parse custom arguments before RecBole's Config
+    parser = argparse.ArgumentParser(description="FMRec training and inference", add_help=False)
+    parser.add_argument('--mode', type=str, choices=['train', 'inference'], default='train',
+                        help='Mode: train to train the model, inference to only evaluate')
+    parser.add_argument('--checkpoint', type=str, default=None,
+                        help='Path to checkpoint for inference mode (optional)')
+    
+    # Extract our custom args, keep the rest for RecBole
+    args, remaining_argv = parser.parse_known_args()
+    
+    # Temporarily modify sys.argv to remove our custom arguments
+    original_argv = sys.argv.copy()
+    sys.argv = [sys.argv[0]] + remaining_argv
+
     config = Config(model=FMRecRecBole, dataset=None, config_file_list=["configs.yaml"])
+    
+    # Restore original sys.argv
+    sys.argv = original_argv
 
     init_seed(config["seed"], config["reproducibility"])
     init_logger(config)
@@ -62,8 +79,15 @@ def main() -> None:
         print(f"Checkpoint epoch: {checkpoint.get('epoch','unknown')}")
 
 
-    best_valid_score, best_valid_result = trainer.fit(train_data, valid_data, saved=True, show_progress=config["show_progress"])
-    trainer.evaluate(test_data, load_best_model=True, show_progress=config["show_progress"])
+    if args.mode == 'train':
+        # 训练模式
+        best_valid_score, best_valid_result = trainer.fit(train_data, valid_data, saved=True, show_progress=config["show_progress"])
+        trainer.evaluate(test_data, load_best_model=True, show_progress=config["show_progress"])
+    else:
+        # 推理模式 - 只进行评估，不训练
+        trainer.evaluate(test_data, load_best_model=True, show_progress=config["show_progress"])
+
+
 
 
 if __name__ == "__main__":
