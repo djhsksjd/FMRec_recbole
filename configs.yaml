@@ -34,8 +34,10 @@ LIST_SUFFIX: _list
 POSITION_FIELD: position_id
 
 # --- Training schedule (aligned with src/main.py + src/trainer.py) ---
-epochs: 500
-eval_step: 20          # src: eval_interval — validate every N epochs (RecBole: (epoch+1) % eval_step == 0)
+# epochs: 500
+epochs: 60   
+# eval_step: 20          # src: eval_interval — validate every N epochs (RecBole: (epoch+1) % eval_step == 0)
+eval_step: 15 #对于steam数据集，采用15轮一测，50轮epoch
 # Note: RecBole early-stops on valid_metric only; src used any HR@k/NDCG@k improvement.
 stopping_step: 5      # src: patience — consecutive bad validations (no valid_metric gain)
 train_batch_size: 512

@@ -1,0 +1,6 @@
+name: recbole_gpu
+channels:
+  - defaults
+dependencies:
+  - python=3.9
+prefix: G:\ANACONDA\envs\recbole_gpu
