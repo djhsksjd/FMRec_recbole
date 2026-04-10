@@ -5,7 +5,8 @@ RecBole training entrypoint without `recbole.quick_start`.
 be installed in this environment, so we wire up the standard RecBole pipeline
 directly: Config -> Dataset -> DataLoader -> Trainer.
 """
-
+import os
+import torch
 import numpy as np
 
 # RecBole versions that predate NumPy 2.0 may reference removed aliases.
@@ -45,10 +46,21 @@ def main() -> None:
     dataset = create_dataset(config)
     train_data, valid_data, test_data = data_preparation(config, dataset)
 
+
     # RecBole's Trainer will move interactions to `config["device"]`.
     # Make sure the model is on the same device to avoid CPU/CUDA mismatches.
     model = FMRecRecBole(config, train_data.dataset).to(config["device"])
     trainer = FMRecTrainer(config, model)
+    
+    load_path = config["load_path"] if "load_path" in config.final_config_dict else None
+    if load_path and os.path.exists(load_path):
+        checkpoint = torch.load(load_path, map_location=config["device"])
+        model.load_state_dict(checkpoint["state_dict"])
+        if "optimizer" in checkpoint:
+            trainer.optimizer.load_state_dict(checkpoint["optimizer"])
+        print(f"Loaded checkpoint from {load_path}")
+        print(f"Checkpoint epoch: {checkpoint.get('epoch','unknown')}")
+
 
     best_valid_score, best_valid_result = trainer.fit(train_data, valid_data, saved=True, show_progress=config["show_progress"])
     trainer.evaluate(test_data, load_best_model=True, show_progress=config["show_progress"])

@@ -12,10 +12,11 @@
 #
 # dataset: ml-100k
 # dataset: amazon_beauty
-dataset: steam
+# dataset: steam
+dataset: yelp
 # 在 FMRec 下执行 python train.py 时用 datasets/（不要用 ../datasets/，那会指到仓库根下的 datasets）
 data_path: datasets/
-
+# load_path: saved/FMRecRecBole-Apr-08-2026_16-12-21.pth
 seed: 1997
 reproducibility: True
 
@@ -25,7 +26,7 @@ USER_ID_FIELD: user_id
 ITEM_ID_FIELD: item_id
 TIME_FIELD: timestamp
 load_col:
-    # inter: [user_id, item_id, timestamp] for ml-100k
+    # inter: [user_id, item_id, timestamp] #for ml-100k
     inter: [user_id, item_id, rating, timestamp] # for amazon_beauty
 
 MAX_ITEM_LIST_LENGTH: 50
@@ -35,9 +36,9 @@ POSITION_FIELD: position_id
 
 # --- Training schedule (aligned with src/main.py + src/trainer.py) ---
 # epochs: 500
-epochs: 50
+epochs: 500
 # eval_step: 20          # src: eval_interval — validate every N epochs (RecBole: (epoch+1) % eval_step == 0)
-eval_step: 20 #对于steam数据集，采用10轮一测，40轮epoch
+eval_step: 5 #对于steam数据集，采用10轮一测，40轮epoch
 # Note: RecBole early-stops on valid_metric only; src used any HR@k/NDCG@k improvement.
 stopping_step: 5      # src: patience — consecutive bad validations (no valid_metric gain)
 train_batch_size: 512
